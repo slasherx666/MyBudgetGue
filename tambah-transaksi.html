@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyBudgetGue - Catat Transaksi</title>
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
 
@@ -42,7 +42,7 @@
 <body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen selection:bg-amber-200">
 
   <!-- ================= MOBILE APP FRAME CONTAINER ================= -->
-  <div class="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative flex flex-col pb-24 border-x border-slate-200/60">
+  <div class="app-frame min-h-screen bg-white shadow-2xl relative flex flex-col pb-24 border-x border-slate-200/60">
     
     <!-- ================= TOP HEADER (< Catat Transaksi) ================= -->
     <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 py-3.5 border-b border-slate-100 flex items-center justify-between shadow-2xs">
@@ -60,7 +60,7 @@
     </header>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <main class="flex-1 px-4 py-4 space-y-4">
+    <main class="app-main app-main-narrow flex-1 px-4 py-4 space-y-4">
       
       <!-- FITUR 1: SHORTCUT TRANSAKSI MIKRO -->
       <section class="space-y-1.5">
@@ -200,7 +200,7 @@
     </main>
 
     <!-- ================= FIXED BOTTOM NAVIGATION BAR ================= -->
-    <nav class="fixed bottom-0 left-1/2 transform -translate-x-1/2 max-w-md w-full bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-2.5 z-40 flex items-center justify-between shadow-lg">
+    <nav class="app-nav bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-2.5 z-40 flex items-center justify-between shadow-lg">
       <a href="dashboard.html" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-800 font-semibold text-[10px]">
         <span class="text-base">⊞</span>
         <span>Dashboard</span>
