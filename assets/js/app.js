@@ -828,6 +828,14 @@ function initDashboardPage() {
   if (elPoin) elPoin.textContent = `${profile.poin} poin`;
   if (elStreak) elStreak.textContent = `${profile.streak} hari`;
 
+  // Statistik di drawer samping (sebelumnya hardcode 0)
+  const elDrawerName = document.getElementById('drawerUserName');
+  const elDrawerStreak = document.getElementById('drawerUserStreak');
+  const elDrawerPoin = document.getElementById('drawerUserPoin');
+  if (elDrawerName) elDrawerName.textContent = profile.username;
+  if (elDrawerStreak) elDrawerStreak.textContent = `🔥 ${profile.streak} hari`;
+  if (elDrawerPoin) elDrawerPoin.textContent = `⭐ ${profile.poin}`;
+
   // 1. Render Shortcut Transaksi Mikro
   renderMicroShortcuts('dashMicroShortcutsList');
 
