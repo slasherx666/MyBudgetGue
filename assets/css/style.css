@@ -230,3 +230,116 @@ input:focus, select:focus, textarea:focus, button:focus {
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
 }
+
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT
+   - Mobile (< 640px)   : 1 kolom penuh, navigasi di bawah
+   - Tablet (>= 640px)  : frame lebih lebar & di tengah, navigasi di bawah
+   - Desktop (>= 1024px): sidebar permanen di kiri, konten memenuhi layar
+   ========================================================================== */
+
+/* Frame aplikasi */
+.app-frame {
+  width: 100%;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Navigasi: bawah (mobile/tablet) */
+nav.app-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 28rem;
+  padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Tablet */
+@media (min-width: 640px) {
+  .app-frame,
+  nav.app-nav { max-width: 44rem; }
+
+  main.app-main { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+/* Desktop: bottom nav berubah menjadi sidebar kiri */
+@media (min-width: 1024px) {
+  div.app-frame {
+    max-width: none;
+    width: auto;
+    margin-left: 16rem;
+    margin-right: 0;
+    padding-bottom: 0;
+    border-left: 0;
+    box-shadow: none;
+  }
+
+  nav.app-nav {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: 16rem;
+    max-width: none;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0.25rem;
+    padding: 5rem 1rem 1.5rem;
+    border-top: 0;
+    border-right: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: none;
+    overflow-y: auto;
+  }
+
+  /* Nama brand di atas sidebar */
+  nav.app-nav::before {
+    content: "MyBudgetGue";
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    font-weight: 800;
+    font-size: 1.125rem;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+  }
+
+  nav.app-nav a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
+    font-size: 0.875rem;
+    transition: background-color 0.15s ease;
+  }
+
+  nav.app-nav a > span:first-child { font-size: 1.125rem; }
+  nav.app-nav a:hover { background-color: #f8fafc; }
+  nav.app-nav a.text-amber-600 { background-color: #fef3c7; }
+
+  /* Konten: tengah, dengan lebar maksimum nyaman dibaca */
+  main.app-main {
+    width: 100%;
+    max-width: 60rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.5rem 2rem 3rem;
+  }
+  main.app-main.app-main-wide   { max-width: 72rem; }
+  main.app-main.app-main-narrow { max-width: 44rem; }
+
+  header.sticky { padding-left: 2rem; padding-right: 2rem; }
+
+  /* Toast notifikasi tidak tertutup sidebar */
+  body > .fixed.bottom-20 { left: calc(50% + 8rem); }
+}
+
+/* Layar sangat besar */
+@media (min-width: 1536px) {
+  main.app-main.app-main-wide { max-width: 80rem; }
+}
