@@ -1,3 +1,4 @@
+
 # MyBudgetGue - Personal Finance & Gamified Budget Tracking Web App
 ### *Mobile Web Edition (Sunglow & Radiant White Palette)*
 **Official Repository:** [https://github.com/slasherx666/MyBudgetGue.git](https://github.com/slasherx666/MyBudgetGue.git)
@@ -112,3 +113,5 @@ MyBudgetGue/
 
 ## 🚀 Cara Menjalankan
 Buka berkas [**`dashboard.html`**](dashboard.html) atau [**`index.html`**](index.html) langsung di peramban web modern Anda (Google Chrome direkomendasikan untuk Web Speech API).
+
+
