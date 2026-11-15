@@ -1309,9 +1309,36 @@ function initPengaturanPage() {
 }
 
 // ==========================================================================
+// SESI LOGIN (terhubung ke backend PHP)
+// ==========================================================================
+async function checkSession() {
+  try {
+    const res = await fetch('api/me.php', { credentials: 'same-origin' });
+    if (res.status === 401) return { state: 'unauthorized' };
+    const data = await res.json();
+    if (!res.ok || !data.user) return { state: 'error' };
+    return { state: 'ok', user: data.user };
+  } catch (err) {
+    return { state: 'error' };
+  }
+}
+
+async function handleLogout(e) {
+  e.preventDefault();
+  try {
+    await fetch('api/logout.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+  } catch (err) { /* tetap lanjut keluar */ }
+  window.location.href = 'auth.html';
+}
+
+// ==========================================================================
 // GLOBAL EVENT DISPATCHER
 // ==========================================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const hamburgerBtn = document.getElementById('hamburgerMenuBtn');
   const closeDrawerBtn = document.getElementById('closeSidebarDrawerBtn');
   const overlay = document.getElementById('mobileSidebarOverlay');
@@ -1319,6 +1346,27 @@ document.addEventListener('DOMContentLoaded', () => {
   if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleMobileMenu);
   if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeMobileMenu);
   if (overlay) overlay.addEventListener('click', closeMobileMenu);
+
+  // Tombol "Keluar Akun" (drawer mobile & sidebar desktop)
+  document.querySelectorAll('[data-logout]').forEach((el) => el.addEventListener('click', handleLogout));
+
+  // Semua halaman selain auth.html wajib login
+  if (!document.getElementById('authForm')) {
+    const session = await checkSession();
+    if (session.state === 'unauthorized') {
+      window.location.replace('auth.html');
+      return;
+    }
+    if (session.state === 'error') {
+      showToast('Server tidak merespons. Pastikan Apache & MySQL di XAMPP menyala dan buka lewat http://localhost/.', 'danger');
+    } else {
+      // Sinkronkan nama ke profil lokal (sementara, sampai tahap 5)
+      const profile = getUserProfile();
+      profile.username = session.user.username;
+      profile.namaLengkap = session.user.nama_lengkap;
+      saveUserProfile(profile);
+    }
+  }
 
   if (document.getElementById('dashRecentTransactionsList')) {
     initDashboardPage();
