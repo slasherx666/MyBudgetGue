@@ -14,12 +14,13 @@
 const STORAGE_KEY_TRANSACTIONS = 'mybudgetgue_transactions';
 const STORAGE_KEY_SETTINGS = 'mybudgetgue_settings';
 const STORAGE_KEY_USER_PROFILE = 'mybudgetgue_user_profile';
+const STORAGE_KEY_ACTIVE_USER = 'mybudgetgue_active_user';
 
 const DEFAULT_SETTINGS = {
-  batasHarian: 100000,
-  batasBulanan: 3000000,
-  targetTabungan: 10000000,
-  tabunganSaatIni: 2500000,
+  batasHarian: 0,
+  batasBulanan: 0,
+  targetTabungan: 0,
+  tabunganSaatIni: 0,
   notifikasiAktif: true,
   waktuPengingat: '20:00',
   pushNotification: true,
@@ -27,13 +28,13 @@ const DEFAULT_SETTINGS = {
 };
 
 const DEFAULT_USER_PROFILE = {
-  username: 'Dorasaki',
-  namaLengkap: 'Dorasaki Finansial',
-  tanggalBergabung: '14 Nov 2026',
-  streak: 5,
-  poin: 120,
-  unlockedBadges: ['badge-streak-7'],
-  voiceUsedCount: 1
+  username: 'Pengguna',
+  namaLengkap: 'Pengguna',
+  tanggalBergabung: '',
+  streak: 0,
+  poin: 0,
+  unlockedBadges: [],
+  voiceUsedCount: 0
 };
 
 // 8 Lencana Resmi
@@ -191,55 +192,154 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function getActiveUser() {
+  return (localStorage.getItem(STORAGE_KEY_ACTIVE_USER) || '').trim();
+}
+
+function setActiveUser(username) {
+  if (username) {
+    localStorage.setItem(STORAGE_KEY_ACTIVE_USER, String(username).trim());
+  } else {
+    localStorage.removeItem(STORAGE_KEY_ACTIVE_USER);
+  }
+}
+
+function clearActiveUser() {
+  localStorage.removeItem(STORAGE_KEY_ACTIVE_USER);
+}
+
+function getScopedKey(baseKey) {
+  const user = getActiveUser();
+  if (user) {
+    return `${baseKey}_${user.toLowerCase()}`;
+  }
+  return baseKey;
+}
+
+function initFreshUser(username, namaLengkap) {
+  setActiveUser(username);
+  const todayStr = formatDateIndo(new Date().toISOString().split('T')[0]);
+
+  // Transaksi fresh kosong (0)
+  const txKey = getScopedKey(STORAGE_KEY_TRANSACTIONS);
+  localStorage.setItem(txKey, JSON.stringify([]));
+
+  // Profil fresh dengan nilai 0
+  const profileKey = getScopedKey(STORAGE_KEY_USER_PROFILE);
+  const freshProfile = {
+    username: username || 'Pengguna',
+    namaLengkap: namaLengkap || username || 'Pengguna',
+    tanggalBergabung: todayStr,
+    streak: 0,
+    poin: 0,
+    unlockedBadges: [],
+    voiceUsedCount: 0
+  };
+  localStorage.setItem(profileKey, JSON.stringify(freshProfile));
+
+  // Pengaturan fresh dengan nilai 0
+  const settingsKey = getScopedKey(STORAGE_KEY_SETTINGS);
+  const freshSettings = { ...DEFAULT_SETTINGS };
+  localStorage.setItem(settingsKey, JSON.stringify(freshSettings));
+}
+
 function getTransactions() {
-  const data = localStorage.getItem(STORAGE_KEY_TRANSACTIONS);
+  const key = getScopedKey(STORAGE_KEY_TRANSACTIONS);
+  const data = localStorage.getItem(key);
   if (!data) {
-    localStorage.setItem(STORAGE_KEY_TRANSACTIONS, JSON.stringify(SEED_TRANSACTIONS));
-    return [...SEED_TRANSACTIONS];
+    // Default akun baru/fresh: selalu array kosong (0 transaksi)
+    localStorage.setItem(key, JSON.stringify([]));
+    return [];
   }
   try {
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+
+    // Deteksi dan bersihkan data dummy seed awal (tx-1 s/d tx-6) agar akun fresh tetap 0
+    const SEED_IDS = new Set(['tx-1', 'tx-2', 'tx-3', 'tx-4', 'tx-5', 'tx-6']);
+    const cleaned = parsed.filter(tx => !SEED_IDS.has(tx.id));
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(key, JSON.stringify(cleaned));
+      return cleaned;
+    }
+
+    return parsed;
   } catch (e) {
     return [];
   }
 }
 
 function saveTransactions(transactions) {
-  localStorage.setItem(STORAGE_KEY_TRANSACTIONS, JSON.stringify(transactions));
+  const key = getScopedKey(STORAGE_KEY_TRANSACTIONS);
+  localStorage.setItem(key, JSON.stringify(transactions || []));
 }
 
 function getSettings() {
-  const data = localStorage.getItem(STORAGE_KEY_SETTINGS);
+  const key = getScopedKey(STORAGE_KEY_SETTINGS);
+  const data = localStorage.getItem(key);
   if (!data) {
-    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
+    localStorage.setItem(key, JSON.stringify(DEFAULT_SETTINGS));
     return { ...DEFAULT_SETTINGS };
   }
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+    const parsed = JSON.parse(data);
+    // Jika masih ada nilai hardcoded dummy lama (tabungan 2.5jt, dsb.), bersihkan ke default 0
+    if (parsed.tabunganSaatIni === 2500000 && parsed.targetTabungan === 10000000 && parsed.batasBulanan === 3000000 && parsed.batasHarian === 100000) {
+      localStorage.setItem(key, JSON.stringify(DEFAULT_SETTINGS));
+      return { ...DEFAULT_SETTINGS };
+    }
+    return { ...DEFAULT_SETTINGS, ...parsed };
   } catch (e) {
     return { ...DEFAULT_SETTINGS };
   }
 }
 
 function saveSettings(settings) {
-  localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+  const key = getScopedKey(STORAGE_KEY_SETTINGS);
+  localStorage.setItem(key, JSON.stringify(settings));
 }
 
 function getUserProfile() {
-  const data = localStorage.getItem(STORAGE_KEY_USER_PROFILE);
+  const key = getScopedKey(STORAGE_KEY_USER_PROFILE);
+  const activeUser = getActiveUser();
+  const todayStr = formatDateIndo(new Date().toISOString().split('T')[0]);
+
+  const freshProfile = {
+    username: activeUser || 'Pengguna',
+    namaLengkap: activeUser || 'Pengguna',
+    tanggalBergabung: todayStr,
+    streak: 0,
+    poin: 0,
+    unlockedBadges: [],
+    voiceUsedCount: 0
+  };
+
+  const data = localStorage.getItem(key);
   if (!data) {
-    localStorage.setItem(STORAGE_KEY_USER_PROFILE, JSON.stringify(DEFAULT_USER_PROFILE));
-    return { ...DEFAULT_USER_PROFILE };
+    localStorage.setItem(key, JSON.stringify(freshProfile));
+    return { ...freshProfile };
   }
   try {
-    return { ...DEFAULT_USER_PROFILE, ...JSON.parse(data) };
+    const parsed = JSON.parse(data);
+    // Jika profil lama masih tersimpan data default dummy Dorasaki (streak: 5, poin: 120), reset ke fresh
+    if (parsed.username === 'Dorasaki' && parsed.streak === 5 && parsed.poin === 120) {
+      const resetProfile = {
+        ...freshProfile,
+        username: activeUser || 'Pengguna',
+        namaLengkap: activeUser || 'Pengguna'
+      };
+      localStorage.setItem(key, JSON.stringify(resetProfile));
+      return resetProfile;
+    }
+    return { ...freshProfile, ...parsed };
   } catch (e) {
-    return { ...DEFAULT_USER_PROFILE };
+    return { ...freshProfile };
   }
 }
 
 function saveUserProfile(profile) {
-  localStorage.setItem(STORAGE_KEY_USER_PROFILE, JSON.stringify(profile));
+  const key = getScopedKey(STORAGE_KEY_USER_PROFILE);
+  localStorage.setItem(key, JSON.stringify(profile));
 }
 
 function addPoints(amount, reason = '') {
@@ -354,10 +454,12 @@ function calculateFinancialSummary() {
   });
 
   const totalSaldo = totalPemasukan - totalPengeluaran;
-  const sisaAnggaranBulanan = settings.batasBulanan - pengeluaranBulanIni;
-  const sisaAnggaranHarian = settings.batasHarian - pengeluaranHariIni;
-  const persentaseBulanan = settings.batasBulanan > 0 ? (pengeluaranBulanIni / settings.batasBulanan) * 100 : 0;
-  const persentaseHarian = settings.batasHarian > 0 ? (pengeluaranHariIni / settings.batasHarian) * 100 : 0;
+  const batasBulanan = parseFloat(settings.batasBulanan) || 0;
+  const batasHarian = parseFloat(settings.batasHarian) || 0;
+  const sisaAnggaranBulanan = batasBulanan - pengeluaranBulanIni;
+  const sisaAnggaranHarian = batasHarian - pengeluaranHariIni;
+  const persentaseBulanan = batasBulanan > 0 ? (pengeluaranBulanIni / batasBulanan) * 100 : 0;
+  const persentaseHarian = batasHarian > 0 ? (pengeluaranHariIni / batasHarian) * 100 : 0;
 
   /**
    * Logika Peringatan Visual Tiga Tingkat:
@@ -377,7 +479,19 @@ function calculateFinancialSummary() {
     progressBarColor: '#10b981'
   };
 
-  if (persentaseBulanan > 90 || sisaAnggaranBulanan < 0) {
+  if (transactions.length === 0) {
+    warningStatus = {
+      level: 'safe',
+      colorName: 'green',
+      label: 'Fresh / 0',
+      title: 'Status Anggaran: Fresh (Nol)',
+      desc: 'Belum ada transaksi tercatat. Saldo, pemasukan, dan pengeluaran Anda masih bersih (Rp 0).',
+      badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+      bannerClass: 'bg-emerald-50/90 text-emerald-900 border-emerald-300',
+      dotColor: '#10b981',
+      progressBarColor: '#10b981'
+    };
+  } else if (batasBulanan > 0 && (persentaseBulanan > 90 || sisaAnggaranBulanan < 0)) {
     warningStatus = {
       level: 'danger',
       colorName: 'red',
@@ -389,7 +503,7 @@ function calculateFinancialSummary() {
       dotColor: '#ef4444',
       progressBarColor: '#ef4444'
     };
-  } else if (persentaseBulanan >= 70) {
+  } else if (batasBulanan > 0 && persentaseBulanan >= 70) {
     warningStatus = {
       level: 'warning',
       colorName: 'yellow',
@@ -410,8 +524,8 @@ function calculateFinancialSummary() {
     pemasukanBulanIni,
     pengeluaranBulanIni,
     pengeluaranHariIni,
-    batasBulanan: settings.batasBulanan,
-    batasHarian: settings.batasHarian,
+    batasBulanan,
+    batasHarian,
     sisaAnggaranBulanan,
     sisaAnggaranHarian,
     remainingDays,
@@ -575,7 +689,7 @@ function renderDashboardAnalyticsWidget(period = 'mingguan') {
       </div>
       <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
         <span class="text-[10px] text-slate-400 font-medium block">Kategori Terbesar</span>
-        <strong class="text-xs font-extrabold text-amber-700 block truncate">${escapeHtml(data.topCategory.category)}</strong>
+        <strong class="text-xs font-extrabold text-amber-700 block truncate">${data.totalPeriodExpense > 0 ? escapeHtml(data.topCategory.category) : '-'}</strong>
       </div>
     </div>
 
@@ -649,7 +763,7 @@ function initAnalitikPage(period = 'mingguan') {
 
   if (elTotalExpense) elTotalExpense.textContent = formatRupiah(data.totalPeriodExpense);
   if (elAvgDaily) elAvgDaily.textContent = `${formatRupiah(data.avgPerDay)} / hari`;
-  if (elTopCategory) elTopCategory.textContent = `${data.topCategory.category} (${data.topCategory.percentage.toFixed(0)}%)`;
+  if (elTopCategory) elTopCategory.textContent = data.totalPeriodExpense > 0 ? `${data.topCategory.category} (${data.topCategory.percentage.toFixed(0)}%)` : '-';
 
   // Insight Otomatis Pintar
   if (elInsights) {
@@ -737,7 +851,7 @@ function checkBadgeUnlocks() {
   }
 
   const summary = calculateFinancialSummary();
-  if (summary.warningStatus.level === 'safe' && !unlocked.includes('badge-disiplin-bulan')) {
+  if (txCount >= 5 && (settings.batasBulanan || 0) > 0 && summary.warningStatus.level === 'safe' && !unlocked.includes('badge-disiplin-bulan')) {
     unlocked.push('badge-disiplin-bulan');
     newlyUnlocked.push('Disiplin Bulanan 📊');
   }
@@ -832,9 +946,11 @@ function initDashboardPage() {
   const elDrawerName = document.getElementById('drawerUserName');
   const elDrawerStreak = document.getElementById('drawerUserStreak');
   const elDrawerPoin = document.getElementById('drawerUserPoin');
+  const elDrawerInitial = document.getElementById('drawerUserInitial');
   if (elDrawerName) elDrawerName.textContent = profile.username;
-  if (elDrawerStreak) elDrawerStreak.textContent = `🔥 ${profile.streak} hari`;
-  if (elDrawerPoin) elDrawerPoin.textContent = `⭐ ${profile.poin}`;
+  if (elDrawerStreak) elDrawerStreak.textContent = `🔥 ${profile.streak || 0} hari`;
+  if (elDrawerPoin) elDrawerPoin.textContent = `⭐ ${profile.poin || 0}`;
+  if (elDrawerInitial) elDrawerInitial.textContent = (profile.username || 'U').charAt(0).toUpperCase();
 
   // 1. Render Shortcut Transaksi Mikro
   renderMicroShortcuts('dashMicroShortcutsList');
@@ -1231,11 +1347,13 @@ function initProfilPage() {
   const elPoin = document.getElementById('profilePoin');
   const elLencanaCount = document.getElementById('profileLencanaCount');
   const elBadgeTitle = document.getElementById('profileBadgeHeaderTitle');
+  const elProfileInitial = document.getElementById('profileUserInitial');
 
   if (elUsername) elUsername.textContent = profile.username;
-  if (elDate) elDate.textContent = `Bergabung sejak ${profile.tanggalBergabung}`;
-  if (elStreak) elStreak.textContent = profile.streak;
-  if (elPoin) elPoin.textContent = profile.poin;
+  if (elDate) elDate.textContent = `Bergabung sejak ${profile.tanggalBergabung || '-'}`;
+  if (elStreak) elStreak.textContent = profile.streak || 0;
+  if (elPoin) elPoin.textContent = profile.poin || 0;
+  if (elProfileInitial) elProfileInitial.textContent = (profile.username || 'U').charAt(0).toUpperCase();
 
   const unlockedCount = (profile.unlockedBadges || []).length;
   if (elLencanaCount) elLencanaCount.textContent = unlockedCount;
@@ -1276,10 +1394,10 @@ function initPengaturanPage() {
   const togEmail = document.getElementById('setEmailNotification');
   const form = document.getElementById('settingsForm');
 
-  if (inpHarian) inpHarian.value = settings.batasHarian;
-  if (inpBulanan) inpBulanan.value = settings.batasBulanan;
-  if (inpTarget) inpTarget.value = settings.targetTabungan;
-  if (inpTabungan) inpTabungan.value = settings.tabunganSaatIni;
+  if (inpHarian) inpHarian.value = settings.batasHarian > 0 ? settings.batasHarian : '';
+  if (inpBulanan) inpBulanan.value = settings.batasBulanan > 0 ? settings.batasBulanan : '';
+  if (inpTarget) inpTarget.value = settings.targetTabungan > 0 ? settings.targetTabungan : '';
+  if (inpTabungan) inpTabungan.value = settings.tabunganSaatIni > 0 ? settings.tabunganSaatIni : '';
 
   if (togNotif) togNotif.checked = settings.notifikasiAktif;
   if (inpWaktu) inpWaktu.value = settings.waktuPengingat;
@@ -1324,7 +1442,7 @@ async function checkSession() {
 }
 
 async function handleLogout(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
   try {
     await fetch('api/logout.php', {
       method: 'POST',
@@ -1332,6 +1450,7 @@ async function handleLogout(e) {
       body: '{}'
     });
   } catch (err) { /* tetap lanjut keluar */ }
+  clearActiveUser();
   window.location.href = 'auth.html';
 }
 
@@ -1354,16 +1473,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!document.getElementById('authForm')) {
     const session = await checkSession();
     if (session.state === 'unauthorized') {
+      clearActiveUser();
       window.location.replace('auth.html');
       return;
     }
     if (session.state === 'error') {
       showToast('Server tidak merespons. Pastikan Apache & MySQL di XAMPP menyala dan buka lewat http://localhost/.', 'danger');
     } else {
-      // Sinkronkan nama ke profil lokal (sementara, sampai tahap 5)
+      // Sinkronkan user aktif dan nama ke profil lokal
+      setActiveUser(session.user.username);
       const profile = getUserProfile();
       profile.username = session.user.username;
-      profile.namaLengkap = session.user.nama_lengkap;
+      if (session.user.nama_lengkap) profile.namaLengkap = session.user.nama_lengkap;
       saveUserProfile(profile);
     }
   }

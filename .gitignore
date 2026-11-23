@@ -10,3 +10,7 @@ Thumbs.db
 
 # Folder Dokumentasi
 docs/
+
+# Temporary test scripts
+scratch_test.js
+
