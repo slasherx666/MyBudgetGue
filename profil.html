@@ -54,7 +54,7 @@
         </a>
         <h1 class="text-base font-extrabold text-slate-900 tracking-tight">Profil Pengguna</h1>
       </div>
-      <a href="auth.html" class="text-xs font-bold text-rose-600 hover:underline">Keluar</a>
+      <a href="auth.html" data-logout class="text-xs font-bold text-rose-600 hover:underline cursor-pointer">Keluar</a>
     </header>
 
     <!-- ================= MAIN CONTENT ================= -->
@@ -63,12 +63,12 @@
       <!-- CARD 1: USER PROFILE HEADER (SESUAI REFERENSI DESAIN) -->
       <section class="card-sunglow rounded-2xl p-5 border border-amber-200/80 bg-gradient-to-b from-amber-50/50 to-white flex flex-col items-center text-center shadow-xs">
         <!-- Big Initial Circle -->
-        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-amber-300 border-2 border-white text-2xl font-extrabold text-amber-950 flex items-center justify-center shadow-sm mb-2.5">
-          D
+        <div id="profileUserInitial" class="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-amber-300 border-2 border-white text-2xl font-extrabold text-amber-950 flex items-center justify-center shadow-sm mb-2.5">
+          U
         </div>
         
-        <h2 id="profileUsername" class="text-lg font-extrabold text-slate-900">Dorasaki</h2>
-        <p id="profileJoinDate" class="text-xs text-slate-400 font-medium mt-0.5">Bergabung sejak 14 Nov 2026</p>
+        <h2 id="profileUsername" class="text-lg font-extrabold text-slate-900">Pengguna</h2>
+        <p id="profileJoinDate" class="text-xs text-slate-400 font-medium mt-0.5">Bergabung baru saja</p>
 
         <!-- 3 Pill Boxes: Streak | Poin | Lencana -->
         <div class="grid grid-cols-3 gap-2.5 w-full mt-4 pt-4 border-t border-slate-100">

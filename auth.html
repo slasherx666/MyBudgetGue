@@ -208,11 +208,19 @@
           return;
         }
 
-        // Sinkronkan nama ke profil lokal (sementara, sampai data profil pindah ke server)
-        const profile = getUserProfile();
-        profile.username = data.user.username;
-        profile.namaLengkap = data.user.nama_lengkap;
-        saveUserProfile(profile);
+        // Set user aktif di local storage
+        setActiveUser(data.user.username);
+
+        if (!isLogin) {
+          // Akun baru dibuat: inisialisasi semua data menjadi fresh dan nol secara menyeluruh
+          initFreshUser(data.user.username, data.user.nama_lengkap);
+        } else {
+          // User login: sinkronkan data profil lokal
+          const profile = getUserProfile();
+          profile.username = data.user.username;
+          if (data.user.nama_lengkap) profile.namaLengkap = data.user.nama_lengkap;
+          saveUserProfile(profile);
+        }
 
         success = true;
         showToast(isLogin ? 'Berhasil masuk ke akun!' : 'Akun berhasil dibuat!', 'success');
